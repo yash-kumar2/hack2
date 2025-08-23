@@ -5,8 +5,10 @@ const jwt = require('jsonwebtoken');
  */
 function auth(req, res, next) {
   const authHeader = req.headers.authorization || '';
+  console.log(req.headers)
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
+  
+  console.log(token)
   if (!token) {
     return res.status(401).json({ message: 'No token provided. Authorization denied.' });
   }

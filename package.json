@@ -11,6 +11,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@google/genai": "^1.15.0",
     "@langchain/google-genai": "^0.2.16",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -19,7 +20,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
     "morgan": "^1.10.0",
-    "node-cron": "^4.2.1"
+    "node-cron": "^4.2.1",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

@@ -1,14 +1,13 @@
-const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
-const Receiver = require("./models/receiver");
-const Donor = require("./models/donor");
+import { GoogleGenAI } from "@google/genai";  // Import the GoogleGenAI client
+import BloodBank from "./models/bloodBank.js";
+import Receiver from "./models/receiver.js";  
 
-// Init Gemini via LangChain
-const model = new ChatGoogleGenerativeAI({
-  modelName: "gemini-pro", // or gemini-1.5-pro if available
-  apiKey: process.env.GOOGLE_API_KEY
+// Initialize GoogleGenAI client with API Key from environment variables
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY // Ensure your API key is set in the environment variable
 });
 
-
+// Classification prompt
 const classifyPrompt = `
 You are a helpful assistant for thalassemia patients.
 Classify the user message into one of 5 categories:
@@ -22,30 +21,17 @@ Return ONLY the number (1, 2, 3, 4, or 5).
 `;
 
 async function classifyMessage(userMessage) {
-  const response = await model.invoke([
-    ["system", classifyPrompt],
-    ["human", userMessage]
-  ]);
-  return response.content.trim();
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",  // Specify the model you want to use
+    contents: classifyPrompt + "\n" + userMessage  // Combine prompt and user message
+  });
+  return response.text.trim(); // Return the classification number
 }
 
 // 🔹 Emergency donor finder (Case 1)
-// async function handleEmergency(city, bloodGroup, requiredUnits) {
-//   const donors = await Donor.find({
-//     city,
-//     status: "Active",
-//     nextEligibleDate: { $lte: new Date() }
-//   }).populate("user").limit(requiredUnits);
-
-//   // Simulate notifying donors
-//   donors.forEach(d => {
-//     console.log(`📩 Emergency message sent to donor ${d.user.name}`);
-//   });
-
-//   return { message: "Emergency donors contacted", donors: donors.map(d => d.user.name) };
-// }
 async function handleEmergency(city, bloodGroup, requiredUnits) {
   const bank = await BloodBank.findOne({ city });
+  console.log("suceess")
 
   if (!bank) return "No blood bank found in your city.";
 
@@ -68,6 +54,7 @@ async function handleEmergency(city, bloodGroup, requiredUnits) {
   await bank.save();
   return `✅ Emergency handled. ${requiredUnits} units of ${bloodGroup} have been allocated from ${city} blood bank.`;
 }
+
 // 🔹 Normal scheduling (Case 2)
 async function handleNormalBloodNeed(receiverId, newDate) {
   const receiver = await Receiver.findById(receiverId).populate("user");
@@ -95,9 +82,10 @@ async function chatbot(userMessage, context = {}) {
     case "4":
       console.log("💙 Emotional support detected. Stub response here.");
       return { message: "Connecting you with a supportive community (stub)." };
+    case "5":
+      console.log("🚨 Immediate medical attention detected. Advising user to seek help.");
     default:
-      return { message: "Sorry, I couldn’t classify your request." };
+      return { message: "Sorry, I couldn’t classify your request.I will connect you to a human" };
   }
 }
-
-module.exports = chatbot;
+export  {chatbot};
