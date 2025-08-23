@@ -1,6 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User')
+const Donor = require('../models/donor');
+const Receiver = require('../models/receiver');
 //sdf
 
 const router = express.Router();

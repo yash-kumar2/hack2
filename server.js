@@ -8,7 +8,7 @@ const connectDB = require('./config/db');
 // const objectRoutes = require('./routes/object.routes');
 
 
-//const authRoutes = require('./routes/auth.routes');
+const authRoutes = require('./routes/auth.routes');
 // const taskRoutes = require('./routes/task.routes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-// app.use('/api/auth', authRoutes);
+ app.use('/api/auth', authRoutes);
 // app.use('/api/tasks', taskRoutes);
 // app.use('/api/organisers', organiserRoutes);
 // app.use('/api/biddings', biddingRoutes);
