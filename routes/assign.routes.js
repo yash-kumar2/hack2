@@ -4,6 +4,7 @@ const cron = require("node-cron");
 const Donor = require("../models/donor");
 const Receiver = require("../models/receiver");
 const BloodBank = require("../models/bloodBank");
+const auth = require("../middleware/auth");  // middleware to verify JWT
 
 // Utility
 const addDays = (date, days) => {
@@ -161,5 +162,11 @@ router.post("/emergency", async (req, res) => {
     donors: donors.map(d => d.user.name)
   });
 });
+// middleware to verify JWT
+
+// Create Donor
+
+
+
 
 module.exports = router;

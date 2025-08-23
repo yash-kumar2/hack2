@@ -8,16 +8,17 @@ const model = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_API_KEY
 });
 
-// 🔹 Classification prompt
+
 const classifyPrompt = `
 You are a helpful assistant for thalassemia patients.
-Classify the user message into one of 4 categories:
+Classify the user message into one of 5 categories:
 1. Emergency blood need (urgent transfusion today/tomorrow)
 2. Normal blood need (patient wants to set/update next transfusion date)
 3. Frequently asked question (general info about thalassemia or donation)
 4. Emotional support (patient is feeling sad or needs motivation)
+5. Immediate medical attention (patient shows unusual symptoms or needs urgent medical care beyond blood transfusion)
 
-Return ONLY the number (1, 2, 3, or 4).
+Return ONLY the number (1, 2, 3, 4, or 5).
 `;
 
 async function classifyMessage(userMessage) {
@@ -29,21 +30,44 @@ async function classifyMessage(userMessage) {
 }
 
 // 🔹 Emergency donor finder (Case 1)
+// async function handleEmergency(city, bloodGroup, requiredUnits) {
+//   const donors = await Donor.find({
+//     city,
+//     status: "Active",
+//     nextEligibleDate: { $lte: new Date() }
+//   }).populate("user").limit(requiredUnits);
+
+//   // Simulate notifying donors
+//   donors.forEach(d => {
+//     console.log(`📩 Emergency message sent to donor ${d.user.name}`);
+//   });
+
+//   return { message: "Emergency donors contacted", donors: donors.map(d => d.user.name) };
+// }
 async function handleEmergency(city, bloodGroup, requiredUnits) {
-  const donors = await Donor.find({
-    city,
-    status: "Active",
-    nextEligibleDate: { $lte: new Date() }
-  }).populate("user").limit(requiredUnits);
+  const bank = await BloodBank.findOne({ city });
 
-  // Simulate notifying donors
-  donors.forEach(d => {
-    console.log(`📩 Emergency message sent to donor ${d.user.name}`);
-  });
+  if (!bank) return "No blood bank found in your city.";
 
-  return { message: "Emergency donors contacted", donors: donors.map(d => d.user.name) };
+  let availableUnits = bank.inventory[bloodGroup]?.reduce((sum, entry) => sum + entry.units, 0) || 0;
+
+  if (availableUnits < requiredUnits) {
+    return `Sorry, only ${availableUnits} units of ${bloodGroup} available in ${city}. Please contact customer care for alternatives.`;
+  }
+
+  // ✅ Use oldest blood greedily
+  let needed = requiredUnits;
+  for (let entry of bank.inventory[bloodGroup]) {
+    if (needed === 0) break;
+
+    let take = Math.min(entry.units, needed);
+    entry.units -= take;
+    needed -= take;
+  }
+
+  await bank.save();
+  return `✅ Emergency handled. ${requiredUnits} units of ${bloodGroup} have been allocated from ${city} blood bank.`;
 }
-
 // 🔹 Normal scheduling (Case 2)
 async function handleNormalBloodNeed(receiverId, newDate) {
   const receiver = await Receiver.findById(receiverId).populate("user");
