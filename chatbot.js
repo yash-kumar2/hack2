@@ -5,6 +5,8 @@ import 'dotenv/config';
 import {  GoogleGenerativeAI } from "@google/generative-ai";
 import BloodBank from "./models/bloodBank.js";
 import Receiver from "./models/receiver.js";
+import Donor from "./models/donor.js"; 
+
 
 // FIXED: Pass the API key directly to the constructor
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);

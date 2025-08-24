@@ -97,6 +97,7 @@ app.use(errorHandler);
 
 // Start server + connect DB
 const PORT = process.env.PORT || 4000;
+console.log("--- GROUND TRUTH MONGO_URI --->", process.env.MONGO_URI, "<---");
 
 (async () => {
   try {
