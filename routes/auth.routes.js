@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User')
 const Donor = require('../models/donor');
 const Receiver = require('../models/receiver');
+const Schedule = require('../models/schedule');
+const Donation = require('../models/donation'); 
 //sdf
 
 const router = express.Router();
@@ -174,7 +176,8 @@ router.get("/my-allotments", auth,async (req, res) => {
 // GET: fetch all donations by logged-in user
 router.get("/my-donations",auth, async (req, res) => {
   try {
-    const donations = await Donation.find({ donorId: req.user.id })
+    const donor = await Donor.findOne({ user: req.user.id });
+    const donations = await Donation.find({ donorId: donor._id })
       .sort({ createdAt: -1 }); // latest first
 
     if (!donations || donations.length === 0) {
@@ -206,9 +209,10 @@ router.get("/my-schedules",auth, async (req, res) => {
 router.post("/create/donation",auth, async (req, res) => {
   try {
     const { scheduledDate, location } = req.body;
-
+    const donorId= await Donor.findOne({user:req.user.id}).select("_id")
+    console.log(donorId)
     const newSchedule = new Schedule({
-      donor: req.user.id,
+      donor: donorId._id ,
       scheduledDate,
       location
     });

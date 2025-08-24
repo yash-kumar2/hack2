@@ -34,18 +34,32 @@ router.get("/schedules",  async (req, res) => {
  */
 router.post("/schedules/:id/approve", auth, async (req, res) => {
   try {
-    const schedule = await Schedule.findById(req.params.id).populate({
-        path: 'donor',
-        populate: {
-          path: 'user',
-          model: 'User'
-        }
-      });
+    // First, find the schedule without populating
+    const schedule = await Schedule.findById(req.params.id);
 
+    // If it's not found at this basic level, then the ID is truly wrong
     if (!schedule) {
       return res.status(404).json({ message: "Schedule not found" });
     }
 
+    // Now, populate the found schedule
+    await schedule.populate({
+      path: 'donor',
+      populate: {
+        path: 'user',
+        model: 'User'
+      }
+    });
+
+    // Add a check to ensure the donor exists after population
+    if (!schedule.donor) {
+      // Mark the schedule as completed to remove it from the pending list
+      schedule.completed = true;
+      await schedule.save();
+      // Inform the admin that the linked donor is missing
+      return res.status(404).json({ message: "Schedule approved, but the original donor could not be found and may have been deleted." });
+    }
+    
     if (schedule.completed) {
       return res.status(400).json({ message: "Schedule already completed" });
     }
