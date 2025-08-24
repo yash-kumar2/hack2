@@ -145,7 +145,118 @@ router.post("/donor", auth, async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+router.get("/my-allotments", auth,async (req, res) => {
+  try {
+    // Step 1: Find receiver linked to logged-in user
+    const receiver = await Receiver.findOne({ user: req.user.id });
+    if (!receiver) {
+      return res.status(404).json({ message: "Receiver profile not found" });
+    }
 
+    // Step 2: Find allotments linked to this receiver
+    const allotments = await Allotment.find({ receiver: receiver._id })
+      .populate("bloodBank", "name city") // optional: show blood bank info
+      .populate("receiver", "user")       // optional: show receiver details
+      .sort({ createdAt: -1 });           // latest first
+
+    res.json(allotments);
+  } catch (err) {
+    console.error("Error fetching allotments:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+// GET: fetch all donations by logged-in user
+router.get("/my-donations",auth, async (req, res) => {
+  try {
+    const donations = await Donation.find({ donorId: req.user.id })
+      .sort({ createdAt: -1 }); // latest first
+
+    if (!donations || donations.length === 0) {
+      return res.status(404).json({ message: "No donations found" });
+    }
+
+    res.json(donations);
+  } catch (err) {
+    console.error("Error fetching donations:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+router.get("/my-schedules",auth, async (req, res) => {
+  try {
+    const schedules = await Schedule.find({
+      donor: req.user.id,
+      completed: false,
+      scheduledDate: { $gte: new Date() } // only future dates
+    }).sort({ scheduledDate: 1 });
+
+    res.json(schedules);
+  } catch (err) {
+    console.error("Error fetching schedules:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ✅ POST a new schedule for logged-in donor
+router.post("/create/donation",auth, async (req, res) => {
+  try {
+    const { scheduledDate, location } = req.body;
+
+    const newSchedule = new Schedule({
+      donor: req.user.id,
+      scheduledDate,
+      location
+    });
+
+    await newSchedule.save();
+
+    res.status(201).json(newSchedule);
+  } catch (err) {
+    console.error("Error creating schedule:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/my-allotments", async (req, res) => {
+  try {
+    const userId = req.user.id; // assuming you set req.user via auth middleware
+
+    // find all receivers for this user
+    const receivers = await Receiver.find({ user: userId }).select("_id");
+
+    // extract receiver IDs
+    const receiverIds = receivers.map(r => r._id);
+
+    // find allotments linked to those receivers
+    const allotments = await Allotment.find({ receiver: { $in: receiverIds } })
+      .populate("receiver")
+      .populate("bloodBank");
+
+    res.json(allotments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+router.get("/receiver/my-info", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id; // from JWT middleware
+
+    // Find receiver info and populate user details
+    const receiver = await Receiver.findOne({ user: userId })
+      .populate("user", "-password"); // exclude password field
+
+    if (!receiver) {
+      return res.status(404).json({ error: "Receiver info not found" });
+    }
+
+    res.json(receiver);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 // Create Receiver
 router.post("/receiver", auth, async (req, res) => {
   try {
