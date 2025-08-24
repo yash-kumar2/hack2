@@ -223,7 +223,9 @@ async function classifyMessage(userMessage, history, ragContext) {
 
 
 // 🔹 Emergency donor finder (Case 1) -UNCHANGED
-async function handleEmergency(city, bloodGroup, requiredUnits) {
+async function handleEmergency(context, requiredUnits) {
+  console.log(context)
+  const { city, bloodGroup } = context.context;
     const bank = await BloodBank.findOne({ city });
     console.log("suceess")
 
@@ -250,7 +252,7 @@ async function handleEmergency(city, bloodGroup, requiredUnits) {
 }
 
 // 🔹 Normal scheduling (Case 2) - UNCHANGED
-async function handleNormalBloodNeed(receiverId, newDate) {
+async function handleNormalBloodNeed(context) {
     const receiver = await Receiver.findById(receiverId).populate("user");
     if (!receiver) throw new Error("Receiver not found");
 
@@ -281,10 +283,10 @@ async function chatbot(userMessage, context = {}) {
 
     switch (classification) {
         case "1":
-            response = await handleEmergency(context.city, context.bloodGroup, context.requiredUnits || 1);
+            response = await handleEmergency(context, context.requiredUnits || 1);
             break;
         case "2":
-            response = await handleNormalBloodNeed(context.receiverId, context.nextDueDate);
+            response = await handleNormalBloodNeed(context);
             break;
         case "3":
             console.log("ℹ️ FAQ detected. Stub response here.");
