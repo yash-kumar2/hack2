@@ -68,22 +68,25 @@ router.post("/login", async (req, res) => {
     if ((!email && !phone) || !password) {
       return res.status(400).json({ message: "Email/Phone and password are required" });
     }
+    
+   const user = await User.findOne({ email: email }).select("+password");
 
-    const user = await User.findOne({ $or: [{ email }, { phone }] }).select("+password");
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "email or phone not assoisated with any account" });
     }
+    console.log(user)
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    // check donor/receiver status
-    const donor = await Donor.findOne({ user: user._id });
-    const receiver = await Receiver.findOne({ user: user._id });
+    const [donor, receiver] = await Promise.all([
+      Donor.findOne({ user: user._id }),
+      Receiver.findOne({ user: user._id })
+    ]);
 
     res.json({
       message: "Login successful",
@@ -95,11 +98,12 @@ router.post("/login", async (req, res) => {
         bloodGroup: user.bloodGroup,
         city: user.city,
         email: user.email,
-        phone: user.phone
+        phone: user.phone,
+        isAdmin: user.isAdmin,
       },
       token,
-      isDonor: donor ? true : false,
-      isReceiver: receiver ? true : false
+      isDonor: !!donor,
+      isReceiver: !!receiver
     });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
@@ -126,7 +130,7 @@ router.post("/donor", auth, async (req, res) => {
     // check if already donor
     const existing = await Donor.findOne({ user: req.user.id });
     if (existing) {
-      return res.status(400).json({ message: "User is already registered as a donor" });
+      return res.status(201).json({ message: "User is already registered as a donor" });
     }
 
     const donor = new Donor({
@@ -239,7 +243,7 @@ router.get("/my-allotments", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router.get("/receiver/my-info", authMiddleware, async (req, res) => {
+router.get("/receiver/my-info", auth, async (req, res) => {
   try {
     const userId = req.user.id; // from JWT middleware
 

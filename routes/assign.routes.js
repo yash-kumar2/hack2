@@ -5,6 +5,8 @@ const Donor = require("../models/donor");
 const Receiver = require("../models/receiver");
 const BloodBank = require("../models/bloodBank");
 const auth = require("../middleware/auth");  // middleware to verify JWT
+const Schedule = require("../models/schedule");
+const Allotment = require("../models/allotment");
 
 // Utility
 const addDays = (date, days) => {
@@ -143,6 +145,17 @@ router.get("/assign", async (req, res) => {
   }
   res.json({ message: "Manual assignment done" });
 });
+router.get("all-scheudules", async (req, res) => {
+  try {
+    //to find all schedules
+    const schedules = await Schedule.findAll()
+  } catch (err) {
+    console.error("Error fetching schedules:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});       
+
+
 
 // 🔹 Emergency donors (stub function)
 router.post("/emergency", async (req, res) => {

@@ -8,6 +8,8 @@ import connectDB from './config/db.js';
 import { chatbot } from './chatbot.js'; // Your enhanced chatbot function
 import authRoutes from './routes/auth.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+import adminRoutes from './routes/admin.routes.js'
+
 
 const app = express();
 const server = http.createServer(app);
@@ -86,6 +88,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 // ... other routes
 
 // Error handlers
