@@ -232,7 +232,7 @@ async function handleEmergency(city, bloodGroup, requiredUnits) {
     let availableUnits = bank.inventory[bloodGroup]?.reduce((sum, entry) => sum + entry.units, 0) || 0;
 
     if (availableUnits < requiredUnits) {
-        return `Sorry, only ${availableUnits} units of ${bloodGroup} available in ${city}. Please contact customer care for alternatives.`;
+        return `Sorry, only ${availableUnits} units of ${bloodGroup} available in ${city}. we are contacting people who might have your blood.Please contact customer care for alternatives.`;
     }
 
     // ✅ Use oldest blood greedily
